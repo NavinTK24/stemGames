@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sniper Math Game</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      overflow: hidden;
+      background-color: black;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      position: relative;
+      color: white;
+      font-family: Arial, sans-serif;
+      flex-direction: column;
+      transition: background-color 0.3s;
+    }
+    
+    #background {
+      width: 100vw;
+      height: 100vh;
+      background: url('https://media.wired.com/photos/615758f72a6d4be4b6b5e613/master/w_1600%2Cc_limit/Games-City-Building-Townscaper-1.jpg') no-repeat center;
+      background-size: cover;
+      position: absolute;
+      clip-path: circle(100px at 50% 50%);
+    }
+
+    .crosshair {
+      position: absolute;
+      width: 1px;
+      height: 100vh;
+      background-color: red;
+      left: 50%;
+      top: 0;
+      transform: translateX(-50%);
+    }
+
+    .horizontal {
+      position: absolute;
+      height: 1px;
+      width: 100vw;
+      background-color: red;
+      top: 50%;
+      left: 0;
+    }
+
+    .dot {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background-color: red;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .question-box {
+      position: absolute;
+      bottom: 50px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 20px;
+      border-radius: 8px;
+      font-size: 22px;
+      width: 80%;
+      text-align: center;
+    }
+
+    .answer-box {
+      margin-top: 10px;
+      display: flex;
+      justify-content: center;
+    }
+
+    input {
+      padding: 10px;
+      font-size: 18px;
+      width: 150px;
+      background-color: rgba(255, 255, 255, 0.2);
+      border: none;
+      border-radius: 5px;
+      color: white;
+      text-align: center;
+    }
+
+    .timer {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 24px;
+      background-color: rgba(0, 0, 0, 0.6);
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    .message {
+      position: absolute;
+      top: 40%;
+      font-size: 40px;
+      font-weight: bold;
+      opacity: 0;
+    }
+
+    .green-message {
+      color: lime;
+      animation: fadeInOut 1s forwards;
+    }
+
+    .red-message {
+      color: rgb(37, 1, 1);
+      animation: fadeInOut 0.5s forwards;
+    }
+
+    @keyframes fadeInOut {
+      0% { opacity: 0; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.2); }
+      100% { opacity: 0; transform: scale(1); }
+    }
+
+    .flash {
+      background-color: red !important;
+      transition: background-color 0.3s;
+    }
+  </style>
+</head>
+<body>
+  <div id="background"></div>
+  
+  <div class="crosshair"></div>
+  <div class="horizontal"></div>
+  <div class="dot"></div>
+
+  <div class="question-box">
+    <div id="question">Solve: </div>
+    <div class="answer-box">
+      <input type="text" id="answer" placeholder="Your answer">
+    </div>
+  </div>
+
+  <div class="timer" id="timer">45</div>
+
+  <script>
+    const background = document.getElementById('background');
+    const crosshair = document.querySelector('.crosshair');
+    const horizontal = document.querySelector('.horizontal');
+    const dot = document.querySelector('.dot');
+    const questionBox = document.getElementById('question');
+    const answerInput = document.getElementById('answer');
+    const timerDisplay = document.getElementById('timer');
+    const body = document.body;
+
+    const questions = [
+      { eq: "2x + 3 = 7", solution: "x = 2" },
+      { eq: "∫(2x + 3)dx from 0 to 1", solution: "5/2" },
+      { eq: "lim(x -> 0) (sin(x)/x)", solution: "1" }
+    ];
+
+    let x = window.innerWidth / 2;
+    let y = window.innerHeight / 2;
+    let vx = 4;
+    let vy = 4;
+    let timerRunning = true;
+    let timeLeft = 45;
+
+    function moveScope() {
+      if (!timerRunning) return;
+
+      x += vx;
+      y += vy;
+      
+      if (x > window.innerWidth - 100 || x < 100) vx = -vx;
+      if (y > window.innerHeight - 100 || y < 100) vy = -vy;
+      
+      background.style.clipPath = `circle(100px at ${x}px ${y}px)`;
+      crosshair.style.left = `${x}px`;
+      horizontal.style.top = `${y}px`;
+      dot.style.left = `${x}px`;
+      dot.style.top = `${y}px`;
+
+      requestAnimationFrame(moveScope);
+    }
+
+    moveScope();
+
+    function getRandomQuestion() {
+      return questions[Math.floor(Math.random() * questions.length)];
+    }
+
+    let currentQuestion = getRandomQuestion();
+    questionBox.innerHTML = `Solve: ${currentQuestion.eq}`;
+
+    function showMessage(text, className) {
+      const message = document.createElement('div');
+      message.classList.add('message', className);
+      message.innerText = text;
+      body.appendChild(message);
+      setTimeout(() => message.remove(), 1000);
+    }
+
+    function checkAnswer() {
+      const userAnswer = answerInput.value.trim();
+      if (userAnswer === currentQuestion.solution) {
+        timerRunning = false;
+        showMessage('Enemy Shot!', 'green-message');
+        setTimeout(() => {
+          timerRunning = true;
+          timeLeft = 45;
+          currentQuestion = getRandomQuestion();
+          questionBox.innerHTML = `Solve: ${currentQuestion.eq}`;
+          moveScope();
+        }, 1500);
+      } else {
+        body.classList.add('flash');
+        showMessage('Shot Missed!', 'red-message');
+        setTimeout(() => body.classList.remove('flash'), 500);
+      }
+      answerInput.value = '';
+    }
+
+    answerInput.addEventListener('keypress', function (event) {
+      if (event.key === 'Enter') {
+        checkAnswer();
+      }
+    });
+
+    setInterval(() => {
+      if (!timerRunning) return;
+      timeLeft--;
+      timerDisplay.innerHTML = timeLeft;
+      if (timeLeft <= 0) {
+        body.classList.add('flash');
+        showMessage('Shot Missed!', 'red-message');
+        setTimeout(() => body.classList.remove('flash'), 500);
+        timeLeft = 45;
+        currentQuestion = getRandomQuestion();
+        questionBox.innerHTML = `Solve: ${currentQuestion.eq}`;
+      }
+    }, 1000);
+  </script>
+</body>
+</html>

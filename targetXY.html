@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Target X-Y</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: black; color: white; text-align: center; font-family: Arial, sans-serif; height: 100vh; width: 100vw; }
+        canvas { display: block; margin: auto; width: 100vw; height: 100vh; }
+        #startScreen, #modeScreen, #topicScreen, #gameModeScreen, #loadingScreen {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: url('https://img.freepik.com/free-vector/black-background-with-focus-spot-light_1017-27230.jpg') no-repeat center center/cover;
+            position: relative;
+            overflow: hidden;
+        }
+        #loadingScreen {
+            background: url('https://images3.alphacoders.com/550/55099.jpg') no-repeat center center/cover;
+            color: white;
+            font-size: 30px;
+        }
+        .spark {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            background: yellow;
+            border-radius: 50%;
+            opacity: 0.8;
+            animation: moveSpark 2s linear infinite;
+        }
+        @keyframes moveSpark {
+            from { transform: translateY(0px); opacity: 1; }
+            to { transform: translateY(-100px); opacity: 0; }
+        }
+        #startButton, .modeButton, .topicButton, .gameModeButton {
+            padding: 15px 30px;
+            font-size: 20px;
+            margin-top: 20px;
+            cursor: pointer;
+            background: black;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        #gameTitle {
+            font-size: 80px;
+            font-family: 'Impact', sans-serif;
+            color: rgb(227, 227, 159);
+            text-shadow: 4px 4px 10px rgba(118, 118, 49, 0.8);
+            -webkit-text-stroke: 3px black;
+        }
+        .singlePlayer, .multiPlayer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .singlePlayer {
+            background-color: green;
+        }
+        .multiPlayer {
+            background-color: blue;
+        }
+        
+        /* Adjust the buttons for topics */
+        #topicScreen {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .topicButton {
+            width: 200px;
+            margin: 10px;
+            padding: 15px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #444;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="startScreen">
+        <h1 id="gameTitle">Target X-Y</h1>
+        <h4>A Pen is Mightier than a Sword</h4>
+        <button id="startButton">Start Game</button>
+    </div>
+
+    <div id="gameModeScreen" style="display: none;">
+        <h1>Select Game Mode</h1>
+        <div class="singlePlayer">
+            <button class="gameModeButton" onclick="chooseGameMode('single')">Single Player</button>
+        </div>
+        <div class="multiPlayer">
+            <button class="gameModeButton" onclick="chooseGameMode('multiplayer')">Multiplayer</button>
+        </div>
+    </div>
+
+    <div id="loadingScreen" style="display: none;">
+        <h1>Loading...</h1>
+    </div>
+
+    <div id="modeScreen" style="display: none;">
+        <h1>Choose Difficulty Mode</h1>
+        <button class="modeButton" onclick="chooseTopic('class10')">Class 10</button>
+        <button class="modeButton" onclick="chooseTopic('class11')">Class 11</button>
+        <button class="modeButton" onclick="chooseTopic('class12')">Class 12</button>
+    </div>
+
+    <div id="topicScreen" style="display: none;"></div>
+
+    <canvas id="gameCanvas" style="display: none;"></canvas>
+
+    <script>
+        document.getElementById("startButton").addEventListener("click", function() {
+            document.getElementById("startScreen").style.display = "none";
+            document.getElementById("gameModeScreen").style.display = "flex";
+        });
+
+        function chooseGameMode(mode) {
+            document.getElementById("gameModeScreen").style.display = "none";
+            document.getElementById("modeScreen").style.display = "flex";
+            console.log(mode);  // "single" or "multiplayer"
+        }
+
+        function chooseTopic(mode) {
+            document.getElementById("modeScreen").style.display = "none";
+            const topicScreen = document.getElementById("topicScreen");
+            topicScreen.innerHTML = `<h1>Choose a Topic</h1>`;
+            topicScreen.style.display = "flex";
+            let topics = {
+                'class10': ['Algebra', 'Geometry', 'Limits', 'Mensuration', 'Statistics and Probability'],
+                'class11': ['Matrices and Determinants', 'Integral Calculus', 'Differential Equations', 'Complex Numbers', 'Analytical Geometry'],
+                'class12': ['Trigonometry', 'Ordinary Differential Equation', '3 Dimensional Geometry', 'Fourier Transform', 'Multiple Integration and Integration']
+            };
+            topics[mode].forEach(topic => {
+                let btn = document.createElement("button");
+                btn.className = "topicButton";
+                btn.innerText = topic;
+                btn.onclick = () => showLoadingScreen(mode, topic);
+                topicScreen.appendChild(btn);
+            });
+        }
+
+        function showLoadingScreen(mode, topic) {
+            document.getElementById("topicScreen").style.display = "none";
+            document.getElementById("loadingScreen").style.display = "flex";
+            
+            setTimeout(() => {
+                startGame(mode, topic);
+            }, 2000); // Show loading screen for 2 seconds
+        }
+
+        function startGame(mode, topic) {
+            document.getElementById("loadingScreen").style.display = "none";
+            const canvas = document.getElementById("gameCanvas");
+            const ctx = canvas.getContext("2d");
+            canvas.style.display = "block";
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            ctx.fillStyle = "white";
+            ctx.font = "30px Arial";
+            ctx.fillText(`Starting ${mode} - ${topic} mode...`, canvas.width / 2 - 100, canvas.height / 2);
+            
+            // Redirect to js5.html after a delay
+            setTimeout(function() {
+                window.location.href = "targetXY2.html"; // Redirects to js5.html after 2 seconds
+            }, 2000); // Delay before redirection
+        }
+
+        // Generate sparks on the start screen
+        function generateSparks() {
+            const startScreen = document.getElementById('startScreen');
+            setInterval(function() {
+                const spark = document.createElement('div');
+                spark.className = 'spark';
+                startScreen.appendChild(spark);
+
+                const xPos = Math.random() * window.innerWidth;
+                const yPos = Math.random() * window.innerHeight;
+
+                spark.style.left = `${xPos}px`;
+                spark.style.top = `${yPos}px`;
+
+                // Remove the spark after animation
+                setTimeout(() => {
+                    spark.remove();
+                }, 2000);
+            }, 100); // New spark every 100ms
+        }
+
+        // Start generating sparks
+        generateSparks();
+    </script>
+</body>
+</html>

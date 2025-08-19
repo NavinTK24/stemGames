@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Target X‑Y — Game</title>
+  <link rel="stylesheet" href="/style.css" />
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <div id="background"></div>
+  <div class="crosshair" id="vline"></div>
+  <div class="horizontal" id="hline"></div>
+  <div class="dot" id="dot"></div>
+
+  <div class="timer" id="timer">--</div>
+
+  <div class="scoreboard" id="scoreboard">
+    <h4>Room: <span id="roomCode">----</span></h4>
+    <div id="players"></div>
+    <div class="divider"></div>
+    <div class="small">Topic: <span id="topicLbl">—</span></div>
+    <div class="small">You: <span id="youLbl">—</span></div>
+    <div id="status" class="small" style="margin-top:8px;"></div>
+  </div>
+
+  <div class="question-box">
+    <div id="question">Waiting for round...</div>
+    <div class="answer-box">
+      <input type="text" id="answer" placeholder="Your answer" autocomplete="off" />
+      <button id="submitBtn" class="secondary">Submit</button>
+    </div>
+  </div>
+
+  <script>
+    // ----- URL Params -----
+    const params = new URLSearchParams(location.search);
+    const roomCode = params.get('room');
+    const playerName = decodeURIComponent(params.get('name')||'Player');
+    const klass = params.get('class') || 'class12';
+    const topic = decodeURIComponent(params.get('topic')||'');
+
+    const bg = document.getElementById('background');
+    const vline = document.getElementById('vline');
+    const hline = document.getElementById('hline');
+    const dot = document.getElementById('dot');
+    const questionEl = document.getElementById('question');
+    const answerEl = document.getElementById('answer');
+    const submitBtn = document.getElementById('submitBtn');
+    const timerEl = document.getElementById('timer');
+
+    const roomCodeEl = document.getElementById('roomCode');
+    const playersEl = document.getElementById('players');
+    const topicLbl = document.getElementById('topicLbl');
+    const youLbl = document.getElementById('youLbl');
+    const statusEl = document.getElementById('status');
+
+    youLbl.textContent = playerName;
+    topicLbl.textContent = topic || klass;
+    roomCodeEl.textContent = roomCode || '—';
+
+    // ----- Socket -----
+    const socket = io();
+
+    function showMessage(text, cls){
+      const el = document.createElement('div');
+      el.className = `message ${cls}`;
+      el.textContent = text;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 1000);
+    }
+
+    socket.on('connect', () => {
+      // Re-join room context so server can keep sending game updates to this client
+      socket.emit('joinRoomWithId', { roomCode, name: playerName });
+    });
+
+    socket.on('roster', (list) => {
+      playersEl.innerHTML = list.map(p => `<div class="row space"><span>${p.name}</span><span class="badge">${p.score}</span></div>`).join('');
+    });
+
+    let x = window.innerWidth / 2;
+    let y = window.innerHeight / 2;
+    let vx = 4, vy = 4;
+    let roundId = null;
+    let roundEndsAt = 0;
+    let timerTick = null;
+
+    function moveScope(){
+      x += vx; y += vy;
+      if (x > window.innerWidth - 100 || x < 100) vx = -vx;
+      if (y > window.innerHeight - 100 || y < 100) vy = -vy;
+      bg.style.clipPath = `circle(100px at ${x}px ${y}px)`;
+      vline.style.left = `${x}px`;
+      hline.style.top = `${y}px`;
+      dot.style.left = `${x}px`;
+      dot.style.top = `${y}px`;
+      requestAnimationFrame(moveScope);
+    }
+    moveScope();
+
+    function updateTimer(){
+      const left = Math.max(0, Math.ceil((roundEndsAt - Date.now())/1000));
+      timerEl.textContent = left;
+      if (left <= 0) clearInterval(timerTick);
+    }
+
+    socket.on('round', (data) => {
+      roundId = data.roundId;
+      roundEndsAt = data.endsAt;
+      questionEl.textContent = `Solve: ${data.eq}`;
+      statusEl.textContent = 'Round started!';
+      clearInterval(timerTick);
+      timerTick = setInterval(updateTimer, 250);
+      updateTimer();
+    });
+
+    socket.on('roundResult', ({ winner, correctAnswer, scores }) => {
+      if (winner) {
+        showMessage(`${winner} shot the enemy!`, 'green-message');
+      } else {
+        document.body.classList.add('flash');
+        showMessage('Time up! Missed!', 'red-message');
+        setTimeout(() => document.body.classList.remove('flash'), 500);
+      }
+      playersEl.innerHTML = Object.entries(scores).map(([n, s]) => `<div class=\"row space\"><span>${n}</span><span class=\"badge\">${s}</span></div>`).join('');
+      questionEl.textContent = `Correct: ${correctAnswer}. Next round…`;
+      timerEl.textContent = '--';
+      answerEl.value = '';
+    });
+
+    socket.on('wrong', () => {
+      document.body.classList.add('flash');
+      showMessage('Shot Missed!', 'red-message');
+      setTimeout(() => document.body.classList.remove('flash'), 500);
+    });
+
+    socket.on('roomClosed', () => {
+      alert('Room closed. Returning to menu.');
+      window.location.href = '/';
+    });
+
+    function submit(){
+      if (!roundId) return;
+      const ans = answerEl.value.trim();
+      if (!ans) return;
+      socket.emit('answer', { roomCode, roundId, answer: ans });
+    }
+    submitBtn.onclick = submit;
+    answerEl.addEventListener('keypress', (e)=>{ if (e.key === 'Enter') submit(); });
+
+    window.addEventListener('resize', () => { x = window.innerWidth/2; y = window.innerHeight/2; });
+  </script>
+</body>
+</html>

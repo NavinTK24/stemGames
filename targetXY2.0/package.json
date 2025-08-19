@@ -1,0 +1,13 @@
+{
+  "name": "target-xy-multiplayer-roomid",
+  "version": "1.0.0",
+  "description": "Target X‑Y multiplayer with manual room IDs, Node, Express, Socket.IO",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1"
+  }
+}

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Target X‑Y — Menu</title>
+  <link rel="stylesheet" href="/style.css" />
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1 class="huge">Target X‑Y</h1>
+      <p class="sub">A Pen is Mightier than a Sword</p>
+      <div class="divider"></div>
+
+      <div id="panelStart" class="panel active">
+        <div class="grid">
+          <div class="stack">
+            <label>Your Name</label>
+            <input id="name" placeholder="username" />
+          </div>
+          <div class="row">
+            <button id="btnSingle" class="secondary">Single Player</button>
+            <button id="btnMulti" class="primary">Multiplayer</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="panelMulti" class="panel">
+        <h3>Multiplayer</h3>
+        <p class="small">Enter a custom Room ID. If you create and the ID doesn't exist, a new room will be created. Your friend can join with the same ID.</p>
+        <div class="row">
+          <div class="stack" style="flex:1;">
+            <label>Create Room</label>
+            <input id="createId" placeholder="Enter roomname" />
+            <div class="row">
+              <input id="roundSec" type="number" value="45" min="10" max="120" style="width:120px;" />
+              <button id="btnCreate" class="primary">Create</button>
+            </div>
+          </div>
+          <div class="stack" style="flex:1;">
+            <label>Join Room</label>
+            <input id="joinId" placeholder="Enter room ID" />
+            <button id="btnJoin" class="secondary">Join</button>
+          </div>
+        </div>
+        <!-- <div id="multiStatus" class="small"></div> -->
+        <div class="divider"></div>
+
+        <div id="panelConfig" class="panel">
+          <h3>Choose Difficulty & Topic</h3>
+          <div class="row">
+            <div class="stack">
+              <label>Class</label>
+              <select id="classSel">
+                <option value="class10">Class 10</option>
+                <option value="class11">Class 11</option>
+                <option value="class12" selected>Class 12</option>
+              </select>
+            </div>
+            <div class="stack" style="flex:1;">
+              <label>Topic (label only)</label>
+              <input id="topic" placeholder="e.g., Algebra / Calculus" />
+            </div>
+          </div>
+          <div class="row" style="margin-top:10px;">
+            <button id="btnSetConfig" class="primary">Confirm Topic</button>
+          </div>
+          <div class="small" id="configMsg"></div>
+        </div>
+
+        <div id="panelWait" class="panel">
+          <p>Waiting for opponent… Share your Room ID: <span id="roomLbl"></span></p>
+          <p class="small">Game will begin automatically when someone joins.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const socket = io();
+
+    const nameEl = document.getElementById('name');
+    const btnSingle = document.getElementById('btnSingle');
+    const btnMulti = document.getElementById('btnMulti');
+
+    const panelStart = document.getElementById('panelStart');
+    const panelMulti = document.getElementById('panelMulti');
+    const panelConfig = document.getElementById('panelConfig');
+    const panelWait = document.getElementById('panelWait');
+
+    const createId = document.getElementById('createId');
+    const joinId = document.getElementById('joinId');
+    const btnCreate = document.getElementById('btnCreate');
+    const btnJoin = document.getElementById('btnJoin');
+    const roundSec = document.getElementById('roundSec');
+    const multiStatus = document.getElementById('multiStatus');
+
+    const classSel = document.getElementById('classSel');
+    const topic = document.getElementById('topic');
+    const btnSetConfig = document.getElementById('btnSetConfig');
+    const configMsg = document.getElementById('configMsg');
+    const roomLbl = document.getElementById('roomLbl');
+
+    let currentRoom = null;
+    let isHost = false;
+
+    function show(panel){
+      [panelStart, panelMulti, panelConfig, panelWait].forEach(p=>p.classList.remove('active'));
+      panel.classList.add('active');
+    }
+
+    btnMulti.onclick = () => {
+      if (!nameEl.value.trim()) return alert('Enter your name first');
+      show(panelMulti);
+    };
+
+    btnSingle.onclick = () => {
+      alert('Single player is not included in this build. Use multiplayer to test.');
+    };
+
+    socket.on('connect', () => multiStatus.textContent = 'Connected');
+    socket.on('disconnect', () => multiStatus.textContent = 'Disconnected');
+
+    btnCreate.onclick = () => {
+      const code = createId.value.trim();
+      if (!code) return alert('Enter a Room ID to create');
+      socket.emit('createRoomWithId', { roomCode: code, name: nameEl.value.trim(), roundSec: roundSec.value });
+    };
+
+    btnJoin.onclick = () => {
+      const code = joinId.value.trim();
+      if (!code) return alert('Enter a Room ID to join');
+      socket.emit('joinRoomWithId', { roomCode: code, name: nameEl.value.trim() });
+    };
+
+    socket.on('errorMsg', (m)=> alert(m));
+
+    socket.on('roomCreated', ({ roomCode, youAreHost }) => {
+      isHost = youAreHost; currentRoom = roomCode; roomLbl.textContent = roomCode;
+      multiStatus.textContent = `Room ${roomCode} created. Choose class & topic.`;
+      show(panelConfig);
+    });
+
+    socket.on('roomJoined', ({ roomCode, youAreHost, config, topicSelected }) => {
+      isHost = youAreHost; currentRoom = roomCode; roomLbl.textContent = roomCode;
+      if (youAreHost) {
+        multiStatus.textContent = `You are host of ${roomCode}.`;
+      } else {
+        multiStatus.textContent = `Joined ${roomCode}.`;
+      }
+      if (!youAreHost) {
+        // If host already chose topic, you will be redirected when round starts
+        show(panelWait);
+      } else {
+        show(panelConfig);
+      }
+    });
+
+    btnSetConfig.onclick = () => {
+      if (!isHost) return alert('Only host sets topic');
+      if (!currentRoom) return alert('No room');
+      socket.emit('setConfig', { roomCode: currentRoom, classLevel: classSel.value, topic: topic.value.trim() });
+      configMsg.textContent = 'Topic confirmed. Waiting for opponent to join…';
+      show(panelWait);
+    };
+
+    socket.on('topicUpdated', ({ classLevel, topic }) => {
+      // Non-host sees confirmation too
+      configMsg.textContent = `Topic: ${topic || classLevel}`;
+    });
+
+    // When a round begins, navigate to game page with params
+    socket.on('round', (data) => {
+      if (!currentRoom) return;
+      const nm = encodeURIComponent(nameEl.value.trim());
+      const cls = encodeURIComponent(classSel.value);
+      const tpc = encodeURIComponent(topic.value.trim() || classSel.value);
+      const url = `/game.html?room=${currentRoom}&name=${nm}&class=${cls}&topic=${tpc}`;
+      window.location.href = url;
+    });
+  </script>
+
+  <script></script>
+</body>
+</html>

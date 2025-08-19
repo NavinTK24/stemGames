@@ -1,0 +1,40 @@
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: #000; color: #fff; font-family: Arial, Helvetica, sans-serif; }
+button { cursor: pointer; border: none; border-radius: 10px; padding: 12px 18px; font-size: 16px; background:#111; color:#fff; }
+button.primary { background: #2563eb; }
+button.secondary { background: #16a34a; }
+button.warn { background: #dc2626; }
+input, select { padding: 10px 12px; border-radius: 8px; border: none; background: #222; color: #fff; }
+.container { display:flex; align-items:center; justify-content:center; min-height:100vh; }
+.card { background: rgba(0,0,0,0.65); border: 1px solid #222; border-radius: 16px; padding: 24px; width: min(960px, 94vw); box-shadow: 0 10px 30px rgba(0,0,0,0.35); }
+.row { display:flex; gap: 12px; flex-wrap: wrap; }
+.stack { display:grid; gap:8px; }
+.grid { display:grid; gap:12px; }
+.huge { font-size: 56px; margin: 0 0 6px; text-align:center; color: rgb(227,227,159); text-shadow: 0 2px 8px rgba(118,118,49,.6); }
+.sub { text-align:center; opacity: .85; }
+.divider { height:1px; background:#222; margin: 16px 0; }
+.small { font-size: 12px; opacity: .75; }
+.badge { background:#111; border:1px solid #333; padding:6px 10px; border-radius:999px; }
+
+/* Game visuals */
+#background { width: 100vw; height: 100vh; position: absolute; background: url('https://media.wired.com/photos/615758f72a6d4be4b6b5e613/master/w_1600%2Cc_limit/Games-City-Building-Townscaper-1.jpg') no-repeat center/cover; clip-path: circle(100px at 50% 50%); }
+.crosshair { position:absolute; width:1px; height:100vh; background:red; left:50%; top:0; transform: translateX(-50%); }
+.horizontal { position:absolute; height:1px; width:100vw; background:red; top:50%; left:0; }
+.dot { position:absolute; width:10px; height:10px; background:red; border-radius:50%; transform: translate(-50%, -50%); }
+.question-box { position:absolute; bottom: 50px; left:50%; transform: translateX(-50%); background: rgba(0,0,0,.6); padding: 16px 20px; border-radius:10px; width: min(900px, 92vw); font-size: 20px; text-align:center; }
+.answer-box { margin-top:10px; display:flex; justify-content:center; gap:10px; }
+.timer { position:absolute; top: 16px; right: 16px; background: rgba(0,0,0,.6); padding:10px 14px; border-radius:10px; font-size: 22px; }
+.message { position:absolute; top: 40%; left:50%; transform: translateX(-50%); font-size: 40px; font-weight: bold; opacity: 0; }
+.green-message { color: lime; animation: fadeInOut 1s forwards; }
+.red-message { color: rgb(255,80,80); animation: fadeInOut .7s forwards; }
+@keyframes fadeInOut { 0% { opacity:0; transform: translateX(-50%) scale(1);} 50% {opacity:1; transform: translateX(-50%) scale(1.2);} 100% {opacity:0; transform: translateX(-50%) scale(1);} }
+.flash { background-color: #5a0000 !important; transition: background-color .25s; }
+.scoreboard { position:absolute; top:16px; left:16px; background: rgba(0,0,0,.6); padding: 10px 14px; border-radius: 10px; font-size: 14px; min-width: 220px; }
+.scoreboard h4 { margin: 0 0 8px; font-weight: 700; }
+
+/* Panels */
+.panel { display:none; }
+.panel.active { display:block; }
+
+@media (max-width: 480px){ .huge { font-size: 38px; } }

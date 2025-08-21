@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>AI Integration Test</title>
+    <link rel="icon" href="data:">
+</head>
+
+<body>
+    <button class="quesButton" onclick="getQuestion()">Question</button>
+    <p class="question"></p>
+    <input class="ansInput" type="text" value=""> <button onclick="checkAnswer()">Submit</button>
+    <p class="result"></p>
+
+    <script>
+        const questionButton = document.querySelector('.quesButton');
+        const questionText = document.querySelector('.question');
+        const answer = document.querySelector('.result');
+
+        async function getQuestion() {
+            questionText.textContent = "Fetching question....";
+
+            try {
+                const res = await fetch("/get-question", { method: "POST" });
+                const data = await res.json();
+                questionText.textContent = data.question;
+            } catch (err) {
+                questionText.textContent = "❌ Error fetching question!";
+                console.error(err);
+            }
+        }
+
+        async function checkAnswer() {
+            const userAnswer = document.querySelector(".ansInput").value;
+
+            const res = await fetch("/check-answer", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ answer: userAnswer })
+            });
+
+            const data = await res.json();
+            answer.textContent = data.result;
+        }
+
+    </script>
+</body>
+
+</html>

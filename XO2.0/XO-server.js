@@ -32,11 +32,17 @@ var questionResult = false
 
 io.on('connection', (socket) => {
 
+    
+    
+    console.log("Welcome");
+    // console.log("Player connected: "+socket.id);
+    console.log('Clients connected:', io.engine.clientsCount);
+    let player = '';
     let currentAnswer = ""; // temporarily store the latest answer
 
     app.post("/get-question", async (req, res) => {
         try {
-            const prompt = `Give a DSA question that can be answered in a word or two
+            const prompt = `Give me a DSA question that can be answered in a word or two
         and its correct answer in JSON format like:
         {"question": "your question here", "answer": "your answer here"}
         Do not add any extra text or markdown fences.`;
@@ -51,13 +57,16 @@ io.on('connection', (socket) => {
 
             res.json({ question: qa.question });
 
+            console.log('Fetched Successfully');
+
         } catch (error) {
             console.error("Error fetching question:", error);
             res.status(500).json({ question: "❌ Failed to fetch question" });
         }
     });
-
+    
     app.post("/check-answer", (req, res) => {
+       
         // normalize user input
         const userAnswer = (req.body.answer || "").toLowerCase().replace(/\s+/g, ""); // remove all spaces
 
@@ -76,13 +85,6 @@ io.on('connection', (socket) => {
             res.json({ result: `❌ Wrong! Correct answer is: ${currentAnswer}` });
         }
     });
-
-
-
-    console.log("Welcome");
-    // console.log("Player connected: "+socket.id);
-    console.log('Clients connected:', io.engine.clientsCount);
-    let player = '';
 
     //Decides and emits the data to the client
     socket.on('playerChoice', (data) => {
@@ -104,7 +106,7 @@ io.on('connection', (socket) => {
                 player = 'O';
             }
 
-            io.emit('updateClick', )
+            io.emit('updateClick',)
 
             //Allows single client to play both
             if (io.engine.clientsCount === 1 && Oclient === '') {
@@ -159,7 +161,7 @@ io.on('connection', (socket) => {
     });
 });
 
-const PORT = process.env.PORT || 3004;
+const PORT = process.env.PORT || 3009;
 httpServer.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });

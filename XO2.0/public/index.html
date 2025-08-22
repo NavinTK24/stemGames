@@ -274,13 +274,29 @@
 
             const data = await res.json();
             console.log(data);
-        }
 
+            if(data.result != "✅ Correct!") {
+                
+            }
+
+            clearAnsInput();
+
+            function clearAnsInput() {
+                ansInputBox.value = "";
+                questionText.textContent = "";
+            }
+        }
+        
+        var boxIndex = 'null';
         boxClick.forEach(box => {
 
             box.addEventListener('click', (event) => {
                 var click = false;
                 if (event.target.textContent === "") {
+                    
+                    if(event.target.id != boxIndex) {
+                        getQuestion();
+                    }
 
                     async function getQuestion() {
                         questionText.textContent = "Fetching question....";
@@ -294,8 +310,8 @@
                             questionText.textContent = "❌ Error fetching question!";
                             console.error(err);
                         }
+                        boxIndex = event.target.id;
                     }
-                    getQuestion();
 
                     click = true;
                     socket.emit('playerChoice', {
@@ -326,6 +342,7 @@
                 xoGame[data.value] = data.player;
                 checkWin(data.player, data.count);
                 quesCont.style.backgroundColor = '';
+                ansInputBox.textContent = '';
                 console.log(`Player ${data.player} clicked box ID: ${data.id}, Index: ${data.value}, Count: ${data.count - 1}`);
             }
 

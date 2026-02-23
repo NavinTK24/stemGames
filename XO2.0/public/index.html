@@ -276,7 +276,9 @@
             console.log(data);
 
             if(data.result != "✅ Correct!") {
-                
+                setTimeout(() => {
+                    boxIndex.style.backgroundColor = 'red';
+                }, 1000);
             }
 
             clearAnsInput();

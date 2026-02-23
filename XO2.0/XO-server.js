@@ -42,7 +42,7 @@ io.on('connection', (socket) => {
 
     app.post("/get-question", async (req, res) => {
         try {
-            const prompt = `Give me a DSA question that can be answered in a word or two
+            const prompt = `Give me a Indian Contitution based question that can be answered in a word or two
         and its correct answer in JSON format like:
         {"question": "your question here", "answer": "your answer here"}
         Do not add any extra text or markdown fences.`;

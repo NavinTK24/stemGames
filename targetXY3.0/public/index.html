@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Target X-Y</title>
+<script src="/socket.io/socket.io.js"></script>
+
+<style>
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+
+body {
+  background: #000 url("https://getwallpapers.com/wallpaper/full/8/8/5/997312-free-hitman-wallpaper-hd-1920x1200.jpg")
+  no-repeat left center;
+  background-size: contain;   /* SHOW FULL IMAGE */
+  color: #fff;
+  font-family: Arial, Helvetica, sans-serif;
+  overflow-x: hidden;
+  position: relative;
+}
+.gameTitle {
+  font-size: 56px; margin: 0 0 6px; text-align:center; color: rgb(227,227,159); text-shadow: 0 2px 8px rgba(118,118,49,.6);
+}
+/* Dark overlay only on right side */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(
+    to right,
+    rgba(0,0,0,0.2) 30%,
+    rgba(0,0,0,0.85) 60%
+  );
+  z-index: 0;
+}
+
+/* Shift UI to right empty area */
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 100vh;
+
+  /* better balanced shift */
+  margin-left: 42%;
+
+  position: relative;
+  z-index: 1;
+}
+
+/* Glass UI card */
+.card {
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px;
+  padding: 50px;
+  width: 650px;
+  box-shadow: 0 0 40px rgba(0,0,0,0.9);
+}
+
+/* 🔥 MASSIVE BRIGHT TITLE */
+.huge {
+  font-size: 120px;   /* MUCH BIGGER */
+  font-weight: 900;
+  margin: 0 0 15px;
+  text-align:left;
+  color: #fffed1;
+
+  text-shadow:
+    0 0 10px #ffffcc,
+    0 0 30px #ffff99,
+    0 0 60px #ffaa00,
+    0 0 120px #ff6600;
+}
+
+.sub {
+  text-align:left;
+  opacity: .9;
+  margin-bottom: 25px;
+  font-size: 20px;
+  letter-spacing: 1px;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: 10px;
+  padding: 14px 22px;
+  font-size: 16px;
+  background:#111;
+  color:#fff;
+  transition: 0.3s;
+}
+
+button:hover {
+  transform: translateY(-2px);
+}
+
+button.primary { background: #2563eb; }
+button.secondary { background: #16a34a; }
+
+input, select {
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: none;
+  background: rgba(25,25,25,0.95);
+  color: #fff;
+  width:100%;
+}
+
+/* FULL SCREEN MISSION SCREEN */
+.mission-screen {
+  position: fixed;
+  inset: 0;
+  display: none;
+
+  background: #000 url("https://images2.alphacoders.com/658/658092.jpg")
+              no-repeat center right;
+  background-size: contain;
+
+  color: white;
+  z-index: 999;
+}
+
+/* Show */
+.mission-screen.active {
+  display: block;
+}
+
+/* LEFT SIDE CONTENT */
+.mission-left {
+  position: absolute;
+  left: 8%;
+  top: 50%;
+  transform: translateY(-50%);
+  max-width: 500px;
+}
+
+/* BIG QUOTE */
+.mission-title {
+  font-size: 70px;
+  font-weight: 800;
+  line-height: 1.2;
+
+  text-shadow:
+    0 0 20px #ff0000,
+    0 0 50px #ff0000,
+    0 0 100px rgba(255,0,0,0.7);
+}
+
+/* LOADING DOTS */
+.loading {
+  margin-top: 40px;
+  display: flex;
+  gap: 10px;
+}
+
+.loading span {
+  width: 12px;
+  height: 12px;
+  background: red;
+  border-radius: 50%;
+  animation: blink 1.2s infinite;
+}
+
+.loading span:nth-child(2) { animation-delay: 0.2s; }
+.loading span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes blink {
+  0% { opacity: 0.2; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.4); }
+  100% { opacity: 0.2; transform: scale(1); }
+}
+
+.loading-text {
+  margin-top: 15px;
+  font-size: 16px;
+  opacity: 0.8;
+}
+
+.panel { display:none; }
+.panel.active { display:block; }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<div class="card">
+
+<h1 class="gameTitle">Target X-Y</h1>
+
+<!-- START -->
+<div id="panelStart" class="panel active">
+  <input id="name" placeholder="Enter Name">
+  <button id="btnSingle" class="secondary">Single Player</button>
+  <button id="btnMulti" class="primary">Multiplayer</button>
+</div>
+
+<!-- CONFIG -->
+<div id="panelConfig" class="panel">
+  <h3>Select Class</h3>
+  <select id="classSelect"></select>
+
+  <h3>Chapter</h3>
+  <select id="chapterSelect"></select>
+
+  <button id="btnContinue" class="primary">Continue</button>
+</div>
+
+<!-- ROOM -->
+<div id="panelRoom" class="panel">
+  <h2>Multiplayer Room</h2>
+
+  <div class="room-grid">
+
+    <div class="room-box">
+      <h3>Create Room</h3>
+      <input id="createRoomId" placeholder="Room ID">
+      <button id="createBtn" class="primary">Create</button>
+    </div>
+
+    <div class="room-box">
+      <h3>Join Room</h3>
+      <input id="joinRoomId" placeholder="Room ID">
+      <button id="joinBtn" class="secondary">Join</button>
+    </div>
+
+  </div>
+
+  <p id="roomMsg" style="margin-top:20px;"></p>
+</div>
+
+<!-- FULL SCREEN LOADING -->
+<div id="panelMission" class="mission-screen">
+
+  <div class="mission-left">
+    <h1 class="mission-title">
+      A Pen is Mightier<br>than a Sword
+    </h1>
+
+    <div class="loading">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+
+    <p class="loading-text">Connecting to opponent...</p>
+  </div>
+
+</div>
+
+<!-- GAME -->
+<div id="panelGame" class="panel">
+  <h2 id="gameInfo"></h2>
+  <h2 id="question"></h2>
+  <input id="answerInput" placeholder="Answer">
+  <button id="submitBtn" class="primary">Submit</button>
+  <p id="result"></p>
+</div>
+
+</div>
+</div>
+
+<script>
+const socket = io();
+
+const panelStart = document.getElementById("panelStart");
+const panelConfig = document.getElementById("panelConfig");
+const panelRoom = document.getElementById("panelRoom");
+const panelGame = document.getElementById("panelGame");
+const panelMission = document.getElementById("panelMission");
+const originalBackground = document.body.style.background;
+const originalBG = '#000 url("https://getwallpapers.com/wallpaper/full/8/8/5/997312-free-hitman-wallpaper-hd-1920x1200.jpg") no-repeat left center';
+
+function show(panel){
+  [panelStart,panelConfig,panelRoom,panelGame,panelMission]
+  .forEach(p=>p.classList.remove("active"));
+  panel.classList.add("active");
+}
+
+document.getElementById("btnSingle").onclick = ()=> show(panelConfig);
+document.getElementById("btnMulti").onclick = ()=> show(panelConfig);
+
+const chapters = {
+  class10: [
+    "Relations & Functions",
+    "Numbers & Sequences",
+    "Algebra",
+    "Geometry",
+    "Coordinate Geometry",
+    "Trigonometry",
+    "Mensuration",
+    "Statistics & Probability"
+  ],
+  class11: [
+    "Sets",
+    "Relations & Functions",
+    "Basic Algebra",
+    "Trigonometry",
+    "Combinatorics",
+    "Mathematical Induction",
+    "Binomial Theorem",
+    "Sequences & Series",
+    "Analytical Geometry",
+    "Differential & Integral Calculus"
+  ],
+  class12: [
+    "Applications of Matrices & Determinants",
+    "Complex Numbers",
+    "Theory of Equations",
+    "Inverse Trigonometric Functions",
+    "Two Dimensional Analytical Geometry-II",
+    "Applications of Vector Algebra",
+    "Differential Calculus",
+    "Differentials and Partial Derivatives",
+    "Applications of Integration",
+    "Ordinary Differential Equations",
+    "Probability Distributions",
+    "Discrete Mathematics"
+  ]
+};
+
+const classSelect = document.getElementById("classSelect");
+const chapterSelect = document.getElementById("chapterSelect");
+
+for(let cls in chapters){
+  let opt=document.createElement("option");
+  opt.value=cls;
+  opt.textContent=cls.toUpperCase();
+  classSelect.appendChild(opt);
+}
+
+function updateChapters(){
+  chapterSelect.innerHTML="";
+  chapters[classSelect.value].forEach(ch=>{
+    let opt=document.createElement("option");
+    opt.value=ch;
+    opt.textContent=ch;
+    chapterSelect.appendChild(opt);
+  });
+}
+updateChapters();
+classSelect.onchange=updateChapters;
+
+let selectedClass,selectedChapter,correctAnswer;
+
+document.getElementById("btnContinue").onclick=()=>{
+  selectedClass=classSelect.value;
+  selectedChapter=chapterSelect.value;
+  show(panelRoom);
+};
+
+document.getElementById("createBtn").onclick=()=>{
+  const roomCode=document.getElementById("createRoomId").value;
+  socket.emit("createRoom",{roomCode,classLevel:selectedClass,chapter:selectedChapter});
+};
+
+document.getElementById("joinBtn").onclick = () => {
+
+  const roomCode = document.getElementById("joinRoomId").value;
+
+  // CHANGE FULL BACKGROUND
+  document.body.style.background =
+    '#000 url("https://images2.alphacoders.com/658/658092.jpg") no-repeat center right';
+
+  document.body.style.backgroundSize = "contain";
+
+  socket.emit("joinRoom",{roomCode});
+};
+
+socket.on("roomCreated",()=>{
+  document.getElementById("roomMsg").innerText="Room created. Waiting for opponent...";
+});
+
+socket.on("startGame",(room)=>{
+
+  // Keep new background for 2 seconds
+  setTimeout(() => {
+
+    // Restore original background
+    document.body.style.background = originalBG;
+    document.body.style.backgroundSize = "contain";
+
+    show(panelGame);
+
+    document.getElementById("gameInfo").innerText =
+      `${room.classLevel.toUpperCase()} - ${room.chapter}`;
+
+    generateQuestion();
+
+  }, 2000);
+
+});
+socket.on("errorMsg",(msg)=>alert(msg));
+
+function generateQuestion(){
+  const a=Math.floor(Math.random()*20)+1;
+  const b=Math.floor(Math.random()*20)+1;
+  correctAnswer=a+b;
+  document.getElementById("question").innerText=`${a} + ${b}`;
+}
+
+document.getElementById("enterArenaBtn").onclick = () => {
+  show(panelGame);
+
+  document.getElementById("gameInfo").innerText =
+    `${selectedClass.toUpperCase()} - ${selectedChapter}`;
+
+  generateQuestion();
+};
+
+document.getElementById("submitBtn").onclick=()=>{
+  const ans=document.getElementById("answerInput").value;
+  if(ans==correctAnswer){
+    document.getElementById("result").innerText="Correct!";
+    generateQuestion();
+  } else {
+    document.getElementById("result").innerText="Wrong!";
+  }
+};
+</script>
+
+</body>
+</html>

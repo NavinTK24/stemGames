@@ -18,6 +18,10 @@ body {
   overflow-x: hidden;
   position: relative;
 }
+body {
+  transition: background 0.8s ease;
+}
+
 .gameTitle {
   font-size: 56px; margin: 0 0 6px; text-align:center; color: rgb(227,227,159); text-shadow: 0 2px 8px rgba(118,118,49,.6);
 }
@@ -116,10 +120,9 @@ input, select {
   display: none;
 
   background: #000 url("https://images2.alphacoders.com/658/658092.jpg")
-              no-repeat center right;
-  background-size: contain;
+              no-repeat right center;
 
-  color: white;
+  background-size: cover;   /* 🔥 FULL SCREEN FIX */
   z-index: 999;
 }
 
@@ -131,10 +134,11 @@ input, select {
 /* LEFT SIDE CONTENT */
 .mission-left {
   position: absolute;
-  left: 8%;
+  left: 4%;              /* move further left */
   top: 50%;
   transform: translateY(-50%);
-  max-width: 500px;
+  width: 35%;            /* give it fixed width */
+  text-align: left;
 }
 
 /* BIG QUOTE */
@@ -142,6 +146,9 @@ input, select {
   font-size: 70px;
   font-weight: 800;
   line-height: 1.2;
+
+  text-align: left;        /* 🔥 FORCE LEFT ALIGN */
+  margin: 0;               /* remove default margins */
 
   text-shadow:
     0 0 20px #ff0000,
@@ -361,10 +368,12 @@ document.getElementById("joinBtn").onclick = () => {
 
   const roomCode = document.getElementById("joinRoomId").value;
 
-  // CHANGE FULL BACKGROUND
+  // Show loading screen panel
+  show(panelMission);
+
+  // Change entire background
   document.body.style.background =
     '#000 url("https://images2.alphacoders.com/658/658092.jpg") no-repeat center right';
-
   document.body.style.backgroundSize = "contain";
 
   socket.emit("joinRoom",{roomCode});
@@ -376,21 +385,11 @@ socket.on("roomCreated",()=>{
 
 socket.on("startGame",(room)=>{
 
-  // Keep new background for 2 seconds
   setTimeout(() => {
 
-    // Restore original background
-    document.body.style.background = originalBG;
-    document.body.style.backgroundSize = "contain";
+    window.location.href = "/game.html";
 
-    show(panelGame);
-
-    document.getElementById("gameInfo").innerText =
-      `${room.classLevel.toUpperCase()} - ${room.chapter}`;
-
-    generateQuestion();
-
-  }, 2000);
+  }, 4000);
 
 });
 socket.on("errorMsg",(msg)=>alert(msg));

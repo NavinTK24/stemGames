@@ -28,10 +28,10 @@
     #background {
       width: 100vw;
       height: 100vh;
-      background: url('https://media.wired.com/photos/615758f72a6d4be4b6b5e613/master/w_1600%2Cc_limit/Games-City-Building-Townscaper-1.jpg') no-repeat center;
+      background: url("/images/sniper.png") no-repeat center;
       background-size: cover;
       position: absolute;
-      clip-path: circle(100px at 50% 50%);
+      clip-path: circle(220px at 50% 50%);
     }
 
     .crosshair {
@@ -118,6 +118,14 @@
       animation: fadeInOut 0.5s forwards;
     }
 
+    .scopeOverlay{
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 5;
+}
+
     @keyframes fadeInOut {
       0% { opacity: 0; transform: scale(1); }
       50% { opacity: 1; transform: scale(1.2); }
@@ -128,11 +136,32 @@
       background-color: red !important;
       transition: background-color 0.3s;
     }
+
+    .scopeOverlay{
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* DARK EDGES like sniper lens */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background: radial-gradient(circle at center,
+      transparent 180px,
+      rgba(0,0,0,0.85) 220px);
+  z-index:5;
+  pointer-events:none;
+}
   </style>
 </head>
 <body>
   <div id="background"></div>
-  
+  <img src="/images/scope.png" class="scopeOverlay">
   <div class="crosshair"></div>
   <div class="horizontal"></div>
   <div class="dot"></div>
@@ -145,6 +174,7 @@
   </div>
 
   <div class="timer" id="timer">45</div>
+  <img src="/images/scope.png" class="scopeOverlay">
 
   <script>
     const background = document.getElementById('background');
@@ -177,8 +207,7 @@
       
       if (x > window.innerWidth - 100 || x < 100) vx = -vx;
       if (y > window.innerHeight - 100 || y < 100) vy = -vy;
-      
-      background.style.clipPath = `circle(100px at ${x}px ${y}px)`;
+      background.style.clipPath = `circle(220px at ${x}px ${y}px)`;
       crosshair.style.left = `${x}px`;
       horizontal.style.top = `${y}px`;
       dot.style.left = `${x}px`;
